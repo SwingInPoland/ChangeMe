@@ -6,4 +6,25 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\Application\ChangeMe.Modules.Events.Application.csproj" />
+        <ProjectReference Include="..\Domain\ChangeMe.Modules.Events.Domain.csproj" />
+        <ProjectReference Include="..\..\..\Shared\Application\ChangeMe.Shared.Application.csproj" />
+        <ProjectReference Include="..\..\..\Shared\EventBus\ChangeMe.Shared.EventBus.csproj" />
+        <ProjectReference Include="..\..\..\Shared\Infrastructure\ChangeMe.Shared.Infrastructure.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Autofac" Version="4.9.4" />
+        <PackageReference Include="MediatR" Version="11.1.0" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="7.0.5" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="7.0.5" />
+        <PackageReference Include="Polly" Version="7.2.3" />
+        <PackageReference Include="Quartz" Version="3.6.2" />
+        <PackageReference Include="Serilog" Version="2.12.0" />
+        <PackageReference Include="Serilog.Extensions.Logging" Version="3.1.0" />
+        <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+    </ItemGroup>
+
 </Project>

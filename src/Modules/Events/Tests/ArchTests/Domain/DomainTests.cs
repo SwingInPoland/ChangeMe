@@ -112,7 +112,7 @@ public class DomainTests : TestBase
         AssertFailingTypes(failingTypes);
     }
 
-    [Fact(Skip = "Useful only for EF Core setup")]
+    [Fact]
     public void Entity_Should_Have_Parameterless_Private_Constructor()
     {
         var entityTypes = Types.InAssembly(DomainAssembly)

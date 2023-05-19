@@ -25,33 +25,59 @@ public class Series : Entity, IAggregateRoot
     private HashSet<string> _editors;
     private string _creatorId;
 
+    /// <summary>
+    /// EF Core
+    /// </summary>
+    private Series() { }
+
     private Series(
-        string creatorId,
+        SeriesId? id,
+        string userId,
         SeriesNames names,
         SeriesDescriptions descriptions,
         List<SeriesEvent> seriesEvents,
         HashSet<string> editors)
     {
-        Id = new SeriesId(Guid.NewGuid());
-        _creatorId = creatorId;
+        Id = id ?? new SeriesId(Guid.NewGuid());
+        _creatorId = userId;
         _names = names;
         _descriptions = descriptions;
         _seriesEvents = seriesEvents;
         _editors = editors;
-        _editors.Add(creatorId);
+        _editors.Add(userId);
 
         AddDomainEvent(new SeriesCreatedDomainEvent(Id));
     }
 
     public static Series Create(
-        string creatorId,
-        SeriesNames names,
-        SeriesDescriptions descriptions,
-        List<SeriesEvent> seriesEvents,
-        HashSet<string> editors) =>
-        new(creatorId, names, descriptions, seriesEvents, editors);
+        string userId,
+        SeriesNames seriesNames,
+        SeriesDescriptions seriesDescriptions,
+        HashSet<string> seriesEditors,
+        EventNames eventNames,
+        EventDescriptions eventDescriptions,
+        ICollection<SeriesEventDate> eventDates,
+        EventHost eventHost,
+        EventImage eventImage,
+        EventUrl eventUrl,
+        EventLocation eventLocation,
+        bool eventIsForFree,
+        HashSet<string> eventEditors)
+    {
+        CheckRule(new EditorsNumberMayNotExceed20Rule(seriesEditors));
+        CheckRule(new CannotAddUserToEventEditorsIfIsInSeriesEditorsRule(seriesEditors, eventEditors));
+        CheckRule(new EventsInSeriesMustNotCoincideRule(eventDates));
 
-    public void ChangeSeriesMainAttributes(
+        var seriesId = new SeriesId(Guid.NewGuid());
+        var seriesEvents = eventDates.Select(date =>
+                SeriesEvent.Create(userId, seriesId, eventNames, eventDescriptions, date, eventHost, eventImage,
+                    eventUrl, eventLocation, eventIsForFree, eventEditors))
+            .ToList();
+
+        return new Series(seriesId, userId, seriesNames, seriesDescriptions, seriesEvents, seriesEditors);
+    }
+
+    public void ChangeMainAttributes(
         string userId,
         SeriesNames names,
         SeriesDescriptions descriptions)
@@ -63,53 +89,22 @@ public class Series : Entity, IAggregateRoot
         AddDomainEvent(new SeriesMainAttributesChangedDomainEvent(Id));
     }
 
-    public void AddUserToEditors(string userId, string newUserId)
+    public void ChangeEditors(string userId, HashSet<string> userIds)
     {
         CheckRule(new UserHasToBeInEditorsRule(_editors, userId));
-        CheckRule(new CannotAddUserToEditorsTwiceRule(_editors, newUserId));
-        CheckRule(new EditorsNumberMayNotExceed20Rule(_editors));
-        _editors.Add(newUserId);
+        CheckRule(new EditorsNumberMayNotExceed20Rule(userIds));
+        CheckRule(new CreatorMustBeInEditorsRule(_creatorId, userIds));
+        foreach (var newUserId in userIds)
+            _editors.Add(newUserId);
 
-        AddDomainEvent(new UserAddedToSeriesEditorsDomainEvent(Id));
+        AddDomainEvent(new SeriesEditorsChangedDomainEvent(Id));
     }
 
-    public void RemoveUserFromEditors(string userId, string oldUserId)
-    {
-        CheckRule(new UserHasToBeInEditorsRule(_editors, userId));
-        CheckRule(new EditorMustExistRule(_editors, oldUserId));
-        CheckRule(new CannotRemoveCreatorFromEditorsRule(_creatorId, oldUserId));
-        _editors.Remove(oldUserId);
-
-        AddDomainEvent(new UserRemovedFromSeriesEditorsDomainEvent(Id));
-    }
-
-    public void AddSeriesEvent(
+    public void AddSeriesEvents(
         string userId,
         EventNames names,
         EventDescriptions descriptions,
-        SeriesEventDate date,
-        EventHost host,
-        EventImage image,
-        EventUrl url,
-        EventLocation location,
-        bool isForFree,
-        HashSet<string> editors)
-    {
-        CheckRule(new UserHasToBeInEditorsRule(_editors, userId));
-        CheckRule(new EventsInSeriesMustNotCoincideRule(GetSeriesEventsDates(), date));
-
-        var seriesEvent = SeriesEvent.Create(userId, Id, names, descriptions, date, host, image, url, location,
-            isForFree, editors);
-        _seriesEvents.Add(seriesEvent);
-
-        AddDomainEvent(new SeriesEventAddedDomainEvent(Id, seriesEvent.Id));
-    }
-
-    public void AddManySeriesEvents(
-        string userId,
-        EventNames names,
-        EventDescriptions descriptions,
-        IReadOnlyCollection<SeriesEventDate> dates,
+        ICollection<SeriesEventDate> dates,
         EventHost host,
         EventImage image,
         EventUrl url,
@@ -119,32 +114,20 @@ public class Series : Entity, IAggregateRoot
     {
         CheckRule(new UserHasToBeInEditorsRule(_editors, userId));
         CheckRule(new EventsInSeriesMustNotCoincideRule(GetSeriesEventsDates(), dates));
+        CheckRule(new CannotAddUserToEventEditorsIfIsInSeriesEditorsRule(_editors, editors));
 
         var seriesEvents = dates.Select(date =>
             SeriesEvent.Create(userId, Id, names, descriptions, date, host, image, url, location, isForFree,
-                editors)).ToReadOnly();
+                editors)).ToList();
 
         _seriesEvents.AddRange(seriesEvents);
 
-        AddDomainEvent(new ManySeriesEventsAddedDomainEvent(Id, seriesEvents.Select(x => x.Id).ToReadOnly()));
+        AddDomainEvent(new SeriesEventsAddedDomainEvent(Id, seriesEvents.Select(e => e.Id)));
     }
 
-    public void RemoveSeriesEvent(string userId, SeriesEventId seriesEventId)
+    public void RemoveSeriesEvents(string userId, HashSet<SeriesEventId> seriesEventIds)
     {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, seriesEventId));
-
-        var seriesEvent = GetEventById(seriesEventId);
-        CheckRule(new UserHasToBeInSeriesOrEventEditorsRule(_editors, seriesEvent.Editors, userId));
-
-        _seriesEvents.Remove(seriesEvent);
-        seriesEvent.Delete(userId);
-
-        AddDomainEvent(new SeriesEventRemovedDomainEvent(Id, seriesEventId));
-    }
-
-    public void RemoveManySeriesEvents(string userId, IReadOnlyCollection<SeriesEventId> seriesEventIds)
-    {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, seriesEventIds));
+        CheckRule(new SeriesEventMustExistsRule(_seriesEvents.Select(e => e.Id), seriesEventIds));
 
         foreach (var id in seriesEventIds)
         {
@@ -152,38 +135,15 @@ public class Series : Entity, IAggregateRoot
             CheckRule(new UserHasToBeInSeriesOrEventEditorsRule(_editors, seriesEvent.Editors, userId));
 
             _seriesEvents.Remove(seriesEvent);
-            seriesEvent.Delete(userId);
+            seriesEvent.Delete();
         }
 
-        AddDomainEvent(new ManySeriesEventsRemovedDomainEvent(Id, seriesEventIds));
+        AddDomainEvent(new SeriesEventsRemovedDomainEvent(Id, seriesEventIds));
     }
 
-    public void ChangeSeriesEventMainAttributes(
+    public void ChangeSeriesEventsMainAttributes(
         string userId,
-        SeriesEventId seriesEventId,
-        EventNames names,
-        EventDescriptions descriptions,
-        SeriesEventDate date,
-        EventHost host,
-        EventImage image,
-        EventUrl url,
-        EventLocation location,
-        bool isForFree)
-    {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, seriesEventId));
-        CheckRule(new EventsInSeriesMustNotCoincideRule(GetSeriesEventsDates(date), date));
-
-        var seriesEvent = GetEventById(seriesEventId);
-        CheckRule(new UserHasToBeInSeriesOrEventEditorsRule(_editors, seriesEvent.Editors, userId));
-
-        seriesEvent.ChangeMainAttributes(userId, names, descriptions, date, host, image, url, location, isForFree);
-
-        AddDomainEvent(new SeriesEventMainAttributesChangedDomainEvent(seriesEventId));
-    }
-
-    public void ChangeManySeriesEventsMainAttributes(
-        string userId,
-        IReadOnlyCollection<(SeriesEventId seriesEventId, SeriesEventDate date)> eventsData,
+        ICollection<(SeriesEventId seriesEventId, SeriesEventDate date)> eventsData,
         EventNames names,
         EventDescriptions descriptions,
         EventHost host,
@@ -192,7 +152,9 @@ public class Series : Entity, IAggregateRoot
         EventLocation location,
         bool isForFree)
     {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, eventsData.Select(e => e.seriesEventId).ToReadOnly()));
+        var seriesEventsIds = eventsData.Select(e => e.seriesEventId).ToList();
+
+        CheckRule(new SeriesEventMustExistsRule(_seriesEvents.Select(e => e.Id), seriesEventsIds));
 
         foreach (var (seriesEventId, date) in eventsData)
         {
@@ -204,45 +166,32 @@ public class Series : Entity, IAggregateRoot
             seriesEvent.ChangeMainAttributes(userId, names, descriptions, date, host, image, url, location, isForFree);
         }
 
-        AddDomainEvent(new ManySeriesEventsMainAttributesChangedDomainEvent(Id,
-            eventsData.Select(e => e.seriesEventId).ToReadOnly()));
+        AddDomainEvent(new SeriesEventsMainAttributesChangedDomainEvent(Id, seriesEventsIds));
     }
 
     public void ChangeSeriesEventStatus(string userId, SeriesEventId seriesEventId, string status)
     {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, seriesEventId));
+        CheckRule(new SeriesEventMustExistsRule(_seriesEvents.Select(e => e.Id), seriesEventId));
 
         var seriesEvent = GetEventById(seriesEventId);
         CheckRule(new UserHasToBeInSeriesOrEventEditorsRule(_editors, seriesEvent.Editors, userId));
 
-        seriesEvent.ChangeStatus(userId, status);
+        seriesEvent.ChangeStatus(status);
 
         AddDomainEvent(new SeriesEventStatusChangedDomainEvent(seriesEventId));
     }
 
-    public void AddUserToSeriesEventEditors(string userId, SeriesEventId seriesEventId, string newUserId)
+    public void ChangeSeriesEventEditors(string userId, SeriesEventId seriesEventId, HashSet<string> userIds)
     {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, seriesEventId));
-        CheckRule(new CannotAddUserToEventEditorsIfIsInSeriesEditorsRule(_editors, newUserId));
+        CheckRule(new SeriesEventMustExistsRule(_seriesEvents.Select(e => e.Id), seriesEventId));
+        CheckRule(new CannotAddUserToEventEditorsIfIsInSeriesEditorsRule(_editors, userIds));
 
         var seriesEvent = GetEventById(seriesEventId);
         CheckRule(new UserHasToBeInSeriesOrEventEditorsRule(_editors, seriesEvent.Editors, userId));
 
-        seriesEvent.AddUserToEditors(userId, newUserId);
+        seriesEvent.ChangeEditors(userIds);
 
-        AddDomainEvent(new UserAddedToSeriesEventEditorsDomainEvent(seriesEventId));
-    }
-
-    public void RemoveUserFromSeriesEventEditors(string userId, SeriesEventId seriesEventId, string oldUserId)
-    {
-        CheckRule(new SeriesEventMustExistsRule(_seriesEvents, seriesEventId));
-
-        var seriesEvent = GetEventById(seriesEventId);
-        CheckRule(new UserHasToBeInSeriesOrEventEditorsRule(_editors, seriesEvent.Editors, userId));
-
-        seriesEvent.RemoveUserFromEditors(userId, oldUserId);
-
-        AddDomainEvent(new UserRemovedFromSeriesEventEditorsDomainEvent(seriesEventId));
+        AddDomainEvent(new SeriesEventEditorsChangedDomainEvent(seriesEventId));
     }
 
     // How is it deleted?
@@ -252,7 +201,7 @@ public class Series : Entity, IAggregateRoot
         CheckRule(new AnySeriesEventCannotBeAfterEndRule(GetSeriesEventsEndDates()));
 
         foreach (var seriesEvent in _seriesEvents)
-            seriesEvent.Delete(userId);
+            seriesEvent.Delete();
 
         AddDomainEvent(new SeriesDeletedDomainEvent(Id));
     }

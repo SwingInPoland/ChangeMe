@@ -6,4 +6,18 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Shared\Domain\ChangeMe.Shared.Domain.csproj" />
+        <ProjectReference Include="..\..\..\Shared\Application\ChangeMe.Shared.Application.csproj" />
+        <ProjectReference Include="..\..\..\Shared\EventBus\ChangeMe.Shared.EventBus.csproj" />
+        <ProjectReference Include="..\Domain\ChangeMe.Modules.Events.Domain.csproj" />
+        <ProjectReference Include="..\IntegrationEvents\ChangeMe.Modules.Events.IntegrationEvents.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Dapper" Version="2.0.123" />
+        <PackageReference Include="FluentValidation" Version="11.5.2" />
+        <PackageReference Include="MediatR" Version="11.1.0" />
+    </ItemGroup>
+
 </Project>

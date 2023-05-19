@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using ChangeMe.Modules.Events.Domain.Series.ValueObjects.SeriesEventDate;
 using ChangeMe.Shared.Domain;
 using ChangeMe.Shared.Extensions;
@@ -9,9 +10,13 @@ public class EventsInSeriesMustNotCoincideRule : IBusinessRule
     private readonly IReadOnlyCollection<SeriesEventDate> _eventDates;
     private readonly IReadOnlyCollection<SeriesEventDate> _newEventDates;
 
-    public EventsInSeriesMustNotCoincideRule(
-        IEnumerable<SeriesEventDate> eventDates,
-        SeriesEventDate newEventDate)
+    public EventsInSeriesMustNotCoincideRule(IEnumerable<SeriesEventDate> newEventDates)
+    {
+        _eventDates = ImmutableList<SeriesEventDate>.Empty;
+        _newEventDates = newEventDates.ToReadOnly();
+    }
+
+    public EventsInSeriesMustNotCoincideRule(IEnumerable<SeriesEventDate> eventDates, SeriesEventDate newEventDate)
     {
         _eventDates = eventDates.ToReadOnly();
         _newEventDates = new List<SeriesEventDate> { newEventDate };
@@ -30,14 +35,16 @@ public class EventsInSeriesMustNotCoincideRule : IBusinessRule
     {
         foreach (var newEventDate in _newEventDates)
         {
-            if (_eventDates.Any(oldEventDate =>
-                    newEventDate.StartDate < oldEventDate.EndDate &&
-                    newEventDate.EndDate > oldEventDate.StartDate))
+            if (_eventDates.Any(
+                    oldEventDate =>
+                        newEventDate.StartDate < oldEventDate.EndDate &&
+                        newEventDate.EndDate > oldEventDate.StartDate))
                 return true;
 
-            if (_newEventDates.ExceptOne(newEventDate).Any(otherNewEventDate =>
-                    newEventDate.StartDate < otherNewEventDate.EndDate &&
-                    newEventDate.EndDate > otherNewEventDate.StartDate))
+            if (_newEventDates.ExceptOne(newEventDate).Any(
+                    otherNewEventDate =>
+                        newEventDate.StartDate < otherNewEventDate.EndDate &&
+                        newEventDate.EndDate > otherNewEventDate.StartDate))
                 return true;
         }
 

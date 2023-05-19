@@ -27,6 +27,11 @@ public class SeriesEvent : Entity
     internal HashSet<string> Editors { get; private set; }
     private string _creatorId;
 
+    /// <summary>
+    /// EF Core
+    /// </summary>
+    private SeriesEvent() { }
+
     private SeriesEvent(
         string creatorId,
         SeriesId seriesId,
@@ -92,30 +97,23 @@ public class SeriesEvent : Entity
         _isForFree = isForFree;
     }
 
-    internal void ChangeStatus(string userId, string status)
+    internal void ChangeStatus(string status)
     {
         CheckRule(new EventCannotBeChangedAfterEndRule(Date.EndDate));
         _status = _status.ChangeStatus(status);
     }
 
-    internal void AddUserToEditors(string userId, string newUserId)
+    internal void ChangeEditors(HashSet<string> userIds)
     {
         CheckRule(new EventCannotBeChangedAfterEndRule(Date.EndDate));
-        CheckRule(new CannotAddUserToEditorsTwiceRule(Editors, newUserId));
-        CheckRule(new EditorsNumberMayNotExceed20Rule(Editors));
-        Editors.Add(newUserId);
-    }
+        CheckRule(new EditorsNumberMayNotExceed20Rule(userIds));
+        CheckRule(new CreatorMustBeInEditorsRule(_creatorId, userIds));
 
-    internal void RemoveUserFromEditors(string userId, string oldUserId)
-    {
-        CheckRule(new EventCannotBeChangedAfterEndRule(Date.EndDate));
-        CheckRule(new EditorMustExistRule(Editors, oldUserId));
-        CheckRule(new CannotRemoveCreatorFromEditorsRule(_creatorId, oldUserId));
-        Editors.Remove(oldUserId);
+        Editors = userIds;
     }
 
     // How is it deleted?
-    internal void Delete(string userId)
+    internal void Delete()
     {
         CheckRule(new EventCannotBeChangedAfterEndRule(Date.EndDate));
     }

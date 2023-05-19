@@ -7,8 +7,12 @@
     </PropertyGroup>
 
     <ItemGroup>
-        <ProjectReference Include="..\..\..\Shared\Domain\ChangeMe.Shared.Domain.csproj"/>
-        <ProjectReference Include="..\..\..\Shared\Extensions\ChangeMe.Shared.Extensions.csproj"/>
+        <PackageReference Include="MediatR" Version="11.1.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\..\Shared\Domain\ChangeMe.Shared.Domain.csproj" />
+        <ProjectReference Include="..\..\..\Shared\Extensions\ChangeMe.Shared.Extensions.csproj" />
     </ItemGroup>
 
 </Project>

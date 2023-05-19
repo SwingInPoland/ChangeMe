@@ -1,21 +1,20 @@
+using System.Collections.Immutable;
 using ChangeMe.Shared.Domain;
 
 namespace ChangeMe.Modules.Events.Domain.Series.Rules;
 
 public class CannotAddUserToEventEditorsIfIsInSeriesEditorsRule : IBusinessRule
 {
-    private readonly IReadOnlyCollection<string> _seriesEditors;
-    private readonly string _newUserId;
+    private readonly ImmutableHashSet<string> _seriesEditors;
+    private readonly ImmutableHashSet<string> _newUserIds;
 
-    public CannotAddUserToEventEditorsIfIsInSeriesEditorsRule(
-        IReadOnlyCollection<string> seriesEditors,
-        string newUserId)
+    public CannotAddUserToEventEditorsIfIsInSeriesEditorsRule(HashSet<string> seriesEditors, HashSet<string> userIds)
     {
-        _seriesEditors = seriesEditors;
-        _newUserId = newUserId;
+        _seriesEditors = seriesEditors.ToImmutableHashSet();
+        _newUserIds = userIds.ToImmutableHashSet();
     }
 
-    public bool IsBroken() => _seriesEditors.Contains(_newUserId);
+    public bool IsBroken() => _newUserIds.Any(userId => _seriesEditors.Contains(userId));
 
     public string Message => "Cannot add user to event editors if they are already in series editors.";
 }

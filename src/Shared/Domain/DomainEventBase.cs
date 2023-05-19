@@ -1,5 +1,6 @@
 ﻿namespace ChangeMe.Shared.Domain;
 
+//TODO: To record?
 public class DomainEventBase : IDomainEvent
 {
     public Guid Id { get; }

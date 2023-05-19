@@ -1,26 +1,27 @@
 using ChangeMe.Modules.Events.Domain.Series.Entities.SeriesEvent;
 using ChangeMe.Shared.Domain;
+using ChangeMe.Shared.Extensions;
 
 namespace ChangeMe.Modules.Events.Domain.Series.Rules;
 
 public class SeriesEventMustExistsRule : IBusinessRule
 {
-    private readonly IReadOnlyCollection<SeriesEvent> _events;
-    private readonly IReadOnlyCollection<SeriesEventId> _ids;
+    private readonly IReadOnlyCollection<SeriesEventId> _existing;
+    private readonly IReadOnlyCollection<SeriesEventId> _toCheck;
 
-    public SeriesEventMustExistsRule(IReadOnlyCollection<SeriesEvent> events, SeriesEventId id)
+    public SeriesEventMustExistsRule(IEnumerable<SeriesEventId> existing, SeriesEventId toCheck)
     {
-        _events = events;
-        _ids = new List<SeriesEventId> { id };
+        _existing = existing.ToReadOnly();
+        _toCheck = new List<SeriesEventId> { toCheck };
     }
 
-    public SeriesEventMustExistsRule(IReadOnlyCollection<SeriesEvent> events, IReadOnlyCollection<SeriesEventId> ids)
+    public SeriesEventMustExistsRule(IEnumerable<SeriesEventId> existing, IEnumerable<SeriesEventId> toCheck)
     {
-        _events = events;
-        _ids = ids;
+        _existing = existing.ToReadOnly();
+        _toCheck = toCheck.ToReadOnly();
     }
 
-    public bool IsBroken() => _ids.Any(id => _events.SingleOrDefault(e => e.Id == id) == default);
+    public bool IsBroken() => _toCheck.Any(id => _existing.NotContains(id));
 
     public string Message => "Series event must exists.";
 }

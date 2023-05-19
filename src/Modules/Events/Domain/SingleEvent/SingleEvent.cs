@@ -12,6 +12,7 @@ using ChangeMe.Shared.Domain;
 
 namespace ChangeMe.Modules.Events.Domain.SingleEvent;
 
+//TODO: Make classes and records sealed. Maybe write some ArchTests for that?
 public class SingleEvent : Entity, IAggregateRoot
 {
     public SingleEventId Id { get; }
@@ -26,6 +27,11 @@ public class SingleEvent : Entity, IAggregateRoot
     private SingleEventStatus _status;
     private HashSet<string> _editors;
     private string _creatorId;
+
+    /// <summary>
+    /// EF Core
+    /// </summary>
+    private SingleEvent() { }
 
     private SingleEvent(
         string creatorId,
@@ -105,26 +111,16 @@ public class SingleEvent : Entity, IAggregateRoot
         AddDomainEvent(new SingleEventStatusChangedDomainEvent(Id));
     }
 
-    public void AddUserToEditors(string userId, string newUserId)
+    public void ChangeEditors(string userId, HashSet<string> userIds)
     {
         CheckRule(new EventCannotBeChangedAfterEndRule(_date.EndDate));
         CheckRule(new UserHasToBeInEditorsRule(_editors, userId));
-        CheckRule(new CannotAddUserToEditorsTwiceRule(_editors, newUserId));
-        CheckRule(new EditorsNumberMayNotExceed20Rule(_editors));
-        _editors.Add(newUserId);
+        CheckRule(new EditorsNumberMayNotExceed20Rule(userIds));
+        CheckRule(new CreatorMustBeInEditorsRule(_creatorId, userIds));
 
-        AddDomainEvent(new UserAddedToSingleEventEditorsDomainEvent(Id));
-    }
+        _editors = userIds;
 
-    public void RemoveUserFromEditors(string userId, string oldUserId)
-    {
-        CheckRule(new EventCannotBeChangedAfterEndRule(_date.EndDate));
-        CheckRule(new UserHasToBeInEditorsRule(_editors, userId));
-        CheckRule(new EditorMustExistRule(_editors, oldUserId));
-        CheckRule(new CannotRemoveCreatorFromEditorsRule(_creatorId, oldUserId));
-        _editors.Remove(oldUserId);
-
-        AddDomainEvent(new UserRemovedFromSingleEventEditorsDomainEvent(Id));
+        AddDomainEvent(new SingleEventEditorsChangedDomainEvent(Id));
     }
 
     // How is it deleted?

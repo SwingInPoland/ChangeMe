@@ -1,5 +1,7 @@
 ﻿using System.Reflection;
+using ChangeMe.Modules.Events.Application.Contracts;
 using ChangeMe.Modules.Events.Domain.SingleEvent;
+using ChangeMe.Modules.Events.Infrastructure;
 using ChangeMe.Shared.Extensions;
 using NetArchTest.Rules;
 using Xunit;
@@ -8,11 +10,11 @@ namespace ChangeMe.Modules.Events.ArchTests.SeedWork;
 
 public abstract class TestBase
 {
-    // protected static Assembly ApplicationAssembly => typeof(CommandBase).Assembly;
+    protected static Assembly ApplicationAssembly => typeof(CommandBase).Assembly;
 
     protected static Assembly DomainAssembly => typeof(SingleEvent).Assembly;
 
-    // protected static Assembly InfrastructureAssembly => typeof(MeetingsContext).Assembly;
+    protected static Assembly InfrastructureAssembly => typeof(EventsContext).Assembly;
 
     protected static void AssertAreImmutable(IEnumerable<Type> types)
     {

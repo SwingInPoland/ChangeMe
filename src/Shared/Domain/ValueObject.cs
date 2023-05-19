@@ -2,18 +2,19 @@
 
 namespace ChangeMe.Shared.Domain;
 
+// TODO: To record
 public abstract class ValueObject : IEquatable<ValueObject>
 {
     private List<PropertyInfo>? _properties;
 
     private List<FieldInfo>? _fields;
-    
+
     protected static void CheckRule(IBusinessRule rule)
     {
         if (rule.IsBroken())
             throw new BusinessRuleValidationException(rule);
     }
-    
+
     public override bool Equals(object? obj)
     {
         if (obj is null || GetType() != obj.GetType())
@@ -22,11 +23,11 @@ public abstract class ValueObject : IEquatable<ValueObject>
         return GetProperties().All(p => PropertiesAreEqual(obj, p))
                && GetFields().All(f => FieldsAreEqual(obj, f));
     }
-    
+
     public bool NotEquals(object? obj) => !Equals(obj);
-    
+
     public bool Equals(ValueObject? obj) => Equals(obj as object);
-    
+
     public bool NotEquals(ValueObject? obj) => !Equals(obj);
 
     public static bool operator ==(ValueObject obj1, ValueObject obj2)
@@ -43,11 +44,11 @@ public abstract class ValueObject : IEquatable<ValueObject>
     }
 
     public static bool operator !=(ValueObject obj1, ValueObject obj2) => !(obj1 == obj2);
-    
-    private bool PropertiesAreEqual(object obj, PropertyInfo p) => 
+
+    private bool PropertiesAreEqual(object obj, PropertyInfo p) =>
         Equals(p.GetValue(this, null), p.GetValue(obj, null));
 
-    private bool FieldsAreEqual(object obj, FieldInfo f) => 
+    private bool FieldsAreEqual(object obj, FieldInfo f) =>
         Equals(f.GetValue(this), f.GetValue(obj));
 
     private IEnumerable<PropertyInfo> GetProperties()
@@ -98,7 +99,7 @@ public abstract class ValueObject : IEquatable<ValueObject>
             return hash;
         }
     }
-    
+
     private static int HashValue(int seed, object? value)
     {
         var currentHash = value?.GetHashCode() ?? 0;

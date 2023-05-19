@@ -10,6 +10,7 @@ public abstract class TranslationBase : ValueObject
     protected TranslationBase(IReadOnlyCollection<TranslationValueBase> values)
     {
         CheckRule(new PolishTranslationIsRequiredRule(values));
+        CheckRule(new TranslationsMustBeUniqueRule(values));
         Values = values;
     }
 }

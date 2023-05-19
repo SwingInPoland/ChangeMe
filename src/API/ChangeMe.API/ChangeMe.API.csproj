@@ -6,4 +6,22 @@
         <ImplicitUsings>enable</ImplicitUsings>
     </PropertyGroup>
 
+    <ItemGroup>
+        <PackageReference Include="Autofac" Version="4.9.4" />
+        <PackageReference Include="Autofac.Extensions.DependencyInjection" Version="5.0.1" />
+        <PackageReference Include="FluentValidation" Version="11.5.2" />
+        <PackageReference Include="Hellang.Middleware.ProblemDetails" Version="6.5.1" />
+        <PackageReference Include="Serilog.Formatting.Compact" Version="1.1.0" />
+        <PackageReference Include="Serilog.Sinks.Console" Version="4.1.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="6.5.0" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\..\Modules\Events\Application\ChangeMe.Modules.Events.Application.csproj" />
+        <ProjectReference Include="..\..\Modules\Events\Infrastructure\ChangeMe.Modules.Events.Infrastructure.csproj" />
+        <ProjectReference Include="..\..\Shared\Application\ChangeMe.Shared.Application.csproj" />
+        <ProjectReference Include="..\..\Shared\Domain\ChangeMe.Shared.Domain.csproj" />
+        <ProjectReference Include="..\..\Shared\Infrastructure\ChangeMe.Shared.Infrastructure.csproj" />
+    </ItemGroup>
+
 </Project>

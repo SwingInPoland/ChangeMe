@@ -1,5 +1,6 @@
 ﻿namespace ChangeMe.Shared.Domain;
 
+// TODO: To record
 public abstract class TypedIdValueBase : IEquatable<TypedIdValueBase>
 {
     public Guid Value { get; }
@@ -11,7 +12,7 @@ public abstract class TypedIdValueBase : IEquatable<TypedIdValueBase>
 
         Value = value;
     }
-    
+
     public override bool Equals(object? obj)
     {
         if (ReferenceEquals(null, obj))
@@ -19,7 +20,7 @@ public abstract class TypedIdValueBase : IEquatable<TypedIdValueBase>
 
         return obj is TypedIdValueBase other && Equals(other);
     }
-    
+
     public bool NotEquals(object? obj) => !Equals(obj);
     public bool Equals(TypedIdValueBase? other) => Value == other?.Value;
 
@@ -39,6 +40,6 @@ public abstract class TypedIdValueBase : IEquatable<TypedIdValueBase>
     }
 
     public static bool operator !=(TypedIdValueBase x, TypedIdValueBase y) => !(x == y);
-    
+
     public override int GetHashCode() => Value.GetHashCode();
 }
